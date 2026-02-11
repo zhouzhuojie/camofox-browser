@@ -4,7 +4,9 @@ FROM node:20-slim
 # Update these when upgrading Camoufox
 ARG CAMOUFOX_VERSION=135.0.1
 ARG CAMOUFOX_RELEASE=beta.24
-ARG CAMOUFOX_URL=https://github.com/daijro/camoufox/releases/download/v${CAMOUFOX_VERSION}-${CAMOUFOX_RELEASE}/camoufox-${CAMOUFOX_VERSION}-${CAMOUFOX_RELEASE}-lin.x86_64.zip
+
+# Support multi-arch builds (amd64/x86_64 and arm64)
+ARG TARGETARCH
 
 # Install dependencies for Camoufox (Firefox-based)
 RUN apt-get update && apt-get install -y \
@@ -36,7 +38,16 @@ RUN apt-get update && apt-get install -y \
 # Pre-bake Camoufox browser binary into image
 # This avoids downloading at runtime and pins the version
 # Note: unzip returns exit code 1 for warnings (Unicode filenames), so we use || true and verify
-RUN mkdir -p /root/.cache/camoufox \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        CAMOUFOX_ARCH="x86_64"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        CAMOUFOX_ARCH="arm64"; \
+    else \
+        echo "Unsupported architecture: $TARGETARCH" && exit 1; \
+    fi \
+    && CAMOUFOX_URL="https://github.com/daijro/camoufox/releases/download/v${CAMOUFOX_VERSION}-${CAMOUFOX_RELEASE}/camoufox-${CAMOUFOX_VERSION}-${CAMOUFOX_RELEASE}-lin.${CAMOUFOX_ARCH}.zip" \
+    && echo "Downloading Camoufox for ${TARGETARCH} (${CAMOUFOX_ARCH}) from ${CAMOUFOX_URL}" \
+    && mkdir -p /root/.cache/camoufox \
     && curl -L -o /tmp/camoufox.zip "${CAMOUFOX_URL}" \
     && (unzip -q /tmp/camoufox.zip -d /root/.cache/camoufox || true) \
     && rm /tmp/camoufox.zip \

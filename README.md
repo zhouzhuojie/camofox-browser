@@ -59,9 +59,24 @@ Default port is `9377`. Set `CAMOFOX_PORT` to override.
 
 ### Docker
 
+Build and run (supports both AMD64 and ARM64):
+
 ```bash
 docker build -t camofox-browser .
 docker run -p 9377:9377 camofox-browser
+```
+
+**Multi-platform builds** (for Apple Silicon, AWS Graviton, etc.):
+
+```bash
+docker buildx create --use
+docker buildx build --platform linux/amd64,linux/arm64 -t camofox-browser:latest .
+```
+
+Or use Docker Compose:
+
+```bash
+docker-compose up -d
 ```
 
 ### Fly.io / Railway
